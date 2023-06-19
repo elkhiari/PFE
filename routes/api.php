@@ -21,12 +21,12 @@ Route::prefix('/users')->group(function() {
         Route::put('/{id}', [AuthController::class, 'update']);
         Route::delete('/{id}', [AuthController::class, 'destroy']);
     });
-})
+});
 
-Route::prefix('/categories')->group(function(){
-    Route::get('/', [CategorieController::class, 'index']);
-    Route::get('/{id}', [CategorieController::class, 'show']);
-    Route::middleware(['auth:api',AdminMiddleware::class])->group(function(){
+Route::prefix('/categories')->group(function() {
+        Route::get('/', [CategorieController::class, 'index']);
+        Route::get('/{id}', [CategorieController::class, 'show']);
+        Route::middleware(['auth:api',AdminMiddleware::class])->group(function(){
         Route::post('/', [CategorieController::class, 'store']);
         Route::put('/{id}', [CategorieController::class, 'update']);
         Route::delete('/{id}', [CategorieController::class, 'destroy']);
