@@ -100,10 +100,11 @@ class AnnonceController extends Controller
         $images = [];
         for ($i = 1; $i <= 5; $i++) {
             if ($request->hasFile('image' . $i)) {
-                $filePath = public_path('images/annonces/'.$annonce->images['image' . $i]);
-                if (file_exists($filePath)) {
-                    unlink($filePath);
-                }
+                $images = json_decode($annonce->images, true);
+                    if (isset($images['image'.$i])) {
+                        $path = public_path('images/annonces/' . $images['image' . $i]);
+                        if (file_exists($path)) unlink($path);
+                    }
                 $image = $request->file('image' . $i);
                 $imageName = time().'_image'.$i.'.'.$image->extension();
                 $image->move(public_path('images/annonces'), $imageName);
@@ -117,7 +118,6 @@ class AnnonceController extends Controller
         if ($request->categorie) $annonce->categorie = $request->categorie;
         if ($images) $annonce->images = json_encode($images);
         $annonce->save();
-
         return response()->json($annonce);
     }
 
@@ -142,4 +142,23 @@ class AnnonceController extends Controller
         return response()->json($annonce);
     }
 
+    public function destroy($id)
+    {
+        $annonce = Annonce::find($id);
+        if (!$annonce) return response()->json(['message' => 'Annonce not found']);
+
+        $user = Auth::guard('api')->user();
+        if ($annonce->user == $user->id || $user->role == 'admin'){
+            $images = json_decode($annonce->images, true);
+            for ($i = 1; $i < 6; $i++) {
+                if (isset($images['image'.$i])) {
+                    $path = public_path('images/annonces/' . $images['image' . $i]);
+                    if (file_exists($path)) unlink($path);
+                }
+            }
+            $annonce->delete();
+            return response()->json(['message' => 'annonce bien supprime']);
+        }
+        return response()->json(["message" => "401"], 401);    
+    }
 }

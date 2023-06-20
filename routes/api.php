@@ -11,14 +11,14 @@ use App\Http\Middleware\AdminMiddleware;
 Route::prefix('/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class,'login']);
-    Route::get('/me', [AuthController::class,'me'])->middleware('auth:api');
 });
 
 Route::prefix('/users')->group(function() {
     Route::get('/', [AuthController::class, 'index']);
     Route::get('/{id}', [AuthController::class, 'show']);
-    Route::middleware(['auth:api',AdminMiddleware::class])->group(function(){
-        Route::put('/{id}', [AuthController::class, 'update']);
+    Route::middleware('auth:api')->group(function(){
+        Route::get('/user/me', [AuthController::class,'me']);
+        Route::put('/', [AuthController::class, 'update']);
         Route::delete('/{id}', [AuthController::class, 'destroy']);
     });
 });

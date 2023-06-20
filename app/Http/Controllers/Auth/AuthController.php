@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Annonce;
 use App\Models\User;
 use Validator;
@@ -77,22 +78,24 @@ class AuthController extends Controller
         return response()->json($user, 200);
     }
 
-    public function update($id, Request $request)
+
+
+    public function update(Request $request)
     {
+        $id = Auth::user()->id;
         $user = User::find($id);
-        if (!$user) return response()->json(['message' => 'User not found'], 404);
-        if (Auth::user()->role != 'admin' && Auth::user()->id != $user->id) return response()->json(['error' => 'Unauthorized. Token not provided.'], 401);
+        if (!$user) return response()->json(['message' => 'internal server error'], 500);
         $validator = Validator::make($request->all(), [
             'email' => 'email|unique:users,email,',
             'password' => 'min:6',
-            'sexe' => '',
-            'telephone' => '',
-            'username' => '',
-            'prenom' => '',
-            'nom' => '',
-            'profile' => 'mimes:jpeg,jpg,png,gif|required|max:10000'
+            'old_password' => 'required_with:password',
+            'profile' => 'mimes:jpeg,jpg,png,gif|max:10000'
         ]);
         if ($validator->fails()) return response()->json($validator->errors(), 400);
+        if (isset($request->password)) {
+            if (!Hash::check($request->old_password, $user->password)) return response()->json(['error' => 'Old password does not match'], 400);
+            $user->password = bcrypt($request->password);
+        }
         if ($request->hasFile('profile')) {
             $path = public_path('/images/profile/'.$user->profile);
             if (file__exists($path)) unlink($path);
@@ -101,24 +104,16 @@ class AuthController extends Controller
             $file->move(public_path('/images/profile/'), $photo);
             $user->profile = $photo;
         }
-        if ($request->email) $user->email = $request->email;
-        if ($request->password) $user->password = bcrypt($request->password);
-        if ($request->sexe) $user->sexe = $request->sexe;
-        if ($request->telephone) $user->telephone = $request->telephone;
-        if ($request->username) $user->username = $request->username;
-        if ($request->prenom) $user->prenom = $request->prenom;
-        if ($request->nom) $user->nom = $request->nom;
+        if (isset($request->email)) $user->email = $request->email;
+        if (isset($request->sexe)) $user->sexe = $request->sexe;
+        if (isset($request->telephone)) $user->telephone = $request->telephone;
+        if (isset($request->username)) $user->username = $request->username;
+        if (isset($request->prenom)) $user->prenom = $request->prenom;
+        if (isset($request->nom)) $user->nom = $request->nom;
         $user->save();
         return response()->json($user, 200);
     }
 
-    public function logout()
-    {
-        if (Auth::check()) {
-            Auth::user()->AauthAcessToken()->delete();
-            return response()->json(['success' => true], 200);
-        }
-    }
 
     public function delete_user($id)
     {
