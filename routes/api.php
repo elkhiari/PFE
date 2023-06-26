@@ -19,6 +19,7 @@ Route::prefix('/users')->group(function() {
     Route::middleware('auth:api')->group(function(){
         Route::get('/user/me', [AuthController::class,'me']);
         Route::put('/', [AuthController::class, 'update']);
+        Route::put('/admin/{id}', [AuthController::class, 'setUserAdmin']); 
         Route::delete('/{id}', [AuthController::class, 'destroy']);
     });
 });
@@ -50,8 +51,35 @@ Route::prefix('/annonces')->group(function(){
     Route::middleware(['auth:api'])->group(function(){
         Route::post('/', [AnnonceController::class, 'store']);
         Route::put('/validate/{id}', [AnnonceController::class, 'setVlidateTrue']);
-        Route::get('/validate/false', [AnnonceController::class, 'getvalidateFalse']);
+        Route::get('/all/get', [AnnonceController::class, 'getvalidateFalse']);
         Route::put('/{id}', [AnnonceController::class, 'update']);
         Route::delete('/{id}', [AnnonceController::class, 'destroy']);
     });
 });
+
+Route::get('/profile/{filename}', function ($filename)
+{
+    $path = public_path('/images/profile/' . $filename);
+    if (!File::exists($path)) {
+        abort(404);
+    }
+    $file = File::get($path);
+    $type = File::mimeType($path);
+    $response = Response::make($file, 200);
+    $response->header("Content-Type", $type);
+    return $response;
+}
+);
+Route::get('/annonces/img/{filename}', function ($filename)
+{
+    $path = public_path('/images/annonces/' . $filename);
+    if (!File::exists($path)) {
+        abort(404);
+    }
+    $file = File::get($path);
+    $type = File::mimeType($path);
+    $response = Response::make($file, 200);
+    $response->header("Content-Type", $type);
+    return $response;
+}
+);

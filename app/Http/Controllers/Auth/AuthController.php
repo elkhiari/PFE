@@ -36,10 +36,10 @@ class AuthController extends Controller
         $input = $request->all();
         $input['profile'] = $photo;
         $input['password'] = bcrypt($input['password']);
+        $input['role'] = 'user';
         $user = User::create($input);
         $token = $user->createToken('auth_token');
         return response()->json([
-            'success' => true,
             'token' => $token,
             'user' => $user
         ], 200);
@@ -51,7 +51,8 @@ class AuthController extends Controller
         $user = Auth::user(); 
         $token = $user->createToken('auth_token')->accessToken;
         return response()->json([
-            'token' => $token
+            'token' => $token,
+            'user' => $user
         ], 200);       
     } else {
         return response()->json(['error' => 'Unauthorized. Token not provided.'], 401);
@@ -73,7 +74,10 @@ class AuthController extends Controller
     {
         $user = User::find($id);
         if (!$user) return response()->json(['message' => 'User not found'], 404);
-        $annonces = Annonce::where('user', $id)->get();
+        $annonces = Annonce::where('user', $id)->with('categorie', 'ville', 'user')->get();
+        foreach ($annonces as $annonce) {
+            $annonce->images = json_decode($annonce->images);
+        }
         $user->annonces = $annonces;
         return response()->json($user, 200);
     }
@@ -115,12 +119,26 @@ class AuthController extends Controller
     }
 
 
-    public function delete_user($id)
+    public function destroy($id)
     {
         $user = User::find($id);
         if (!$user) return response()->json(['message' => 'User not found'], 404);
         if (Auth::user()->role != 'admin' && Auth::user()->id != $user->id) return response()->json(['error' => 'Unauthorized. Token not provided.'], 401);
+        if ($user->profile != 'default.png') {
+            $path = public_path('/images/profile/'.$user->profile);
+            if (file_exists($path)) unlink($path);
+        }
         $user->delete();
         return response()->json(['message' => 'User deleted successfully'], 200);
+    }
+
+    public function setUserAdmin($id)
+    {
+        $user = User::find($id);
+        if (!$user) return response()->json(['message' => 'User not found'], 404);
+        if (Auth::user()->role != 'admin') return response()->json(['error' => 'Unauthorized.xx'], 401);
+        $user->role = $user->role == 'admin' ? 'user' : 'admin';
+        $user->save();
+        return response()->json(['message' => 'User updated successfully'], 200);
     }
 }

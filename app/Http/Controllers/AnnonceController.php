@@ -123,7 +123,7 @@ class AnnonceController extends Controller
 
     public function getvalidateFalse()
     {
-        $annonces = Annonce::where('validated',0)->with('categorie', 'ville', 'user')->get();
+        $annonces = Annonce::with('categorie', 'ville', 'user')->get();
         foreach ($annonces as $annonce) {
             $annonce->images = json_decode($annonce->images);
         }
